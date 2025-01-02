@@ -14,12 +14,12 @@ object AnimatorCompat {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             totalDuration
         } else {
-            if (this is ValueAnimator) {
-                startDelay + (duration * (repeatCount + 1))
-            } else {
-                startDelay + duration
-            }
+            startDelay + duration * repeatCount(animator)
         }
+    }
+
+    fun getRepeatDuration(animator: Animator): Long = with(animator) {
+        return duration * repeatCount(animator)
     }
 
     /**
@@ -27,7 +27,10 @@ object AnimatorCompat {
      * 原生动画次数默认为0，无限为-1，设置N次，执行N+1次
      * 把动画次数修正默认为1，设置N次就执行N次
      */
-    fun repeatCount(animator: ValueAnimator): Int {
+    fun repeatCount(animator: Animator): Int {
+        if(animator !is ValueAnimator){
+            return 1
+        }
         if (animator.repeatCount < 0) return animator.repeatCount
         return animator.repeatCount + 1
     }

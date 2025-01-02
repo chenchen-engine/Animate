@@ -777,10 +777,24 @@ class AnimateContainer : ValueAnimator() {
         }
 
         /**
-         * 动画的时间进度
+         * 动画的时间进度，不包含startDelay
          */
         fun animatedPlayTime(): Long {
+            return correctPlayTime()
+        }
+
+        /**
+         * 动画的时间进度，包含startDelay
+         */
+        fun animatedTotalPlayTime(): Long {
             return animator.currentPlayTime
+        }
+
+        /**
+         * 正确的动画时间进度
+         */
+        private fun correctPlayTime(animation: ValueAnimator = animator): Long {
+            return animation.currentPlayTime - animation.startDelay
         }
 
         /**
@@ -1113,7 +1127,7 @@ class AnimateContainer : ValueAnimator() {
             val currentPlayTime = calculateRunningDuration(playTime).duration
             val repeatCount = AnimatorCompat.repeatCount(animator)
             if (totalDuration <= 0) {
-                if(rememberRepeatCount < repeatCount) {
+                if (rememberRepeatCount < repeatCount) {
                     //如果时长为0，也要保证回调的次数以及记录的次数与正常时无异
                     for (i in 0 until animator.repeatCount + 1) {
                         rememberRepeatCount++
@@ -1147,12 +1161,14 @@ class AnimateContainer : ValueAnimator() {
          * ```
          */
         private val animatorUpdateListener = AnimatorUpdateListener { animation ->
-            retryChangeRepeat(animation.currentPlayTime)
+            val correctPlayTime = correctPlayTime(animation)
+            if (correctPlayTime < 0) return@AnimatorUpdateListener
+            retryChangeRepeat(correctPlayTime)
             val totalDuration = AnimatorCompat.getTotalDuration(animation)
-            if (animation.currentPlayTime >= totalDuration) {
+            if (correctPlayTime >= totalDuration) {
                 dispatchPlayTime(totalDuration)
             } else {
-                dispatchPlayTime(animation.currentPlayTime % animation.duration)
+                dispatchPlayTime(correctPlayTime % animation.duration)
             }
         }
 
@@ -1174,7 +1190,7 @@ class AnimateContainer : ValueAnimator() {
                 }
                 //如果主动调用end，onUpdate收到的currentPlayTime不会变，变的是duration，
                 //整个动画是靠currentPlayTime驱动的，所以在这里补充一下，置为结束时间，但这样正常的结束就会多收到一次onUpdate，应该没关系吧
-                dispatchPlayTime(AnimatorCompat.getTotalDuration(animation))
+                dispatchPlayTime(AnimatorCompat.getTotalDuration(animation) - animation.startDelay)
                 listeners.forEach { it.onEnd(this@AnimateNode) }
             }
 

@@ -2,6 +2,7 @@
 
 package chenchen.engine.animate
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -17,8 +18,8 @@ import chenchen.engine.animate.demo.databinding.ActivityTestCaseBinding
  *
  * bugList:
  * [ ] reverse无法对repeat生效
- * [ ] rootAnimate设置了startDelay似乎对计算currentPlayTime异常，因为startDelay也算进了totalDuration
- *    可能需要减去startDelay
+ * [ ] rootAnimate设置了startDelay对计算currentPlayTime异常，因为startDelay也算进了totalDuration
+ *    需要减去startDelay，目前遇到的问题是repeatCount多计算了startDelay的时间
  */
 class TestCaseActivity : AppCompatActivity() {
     private val TAG = "TestCaseActivity"
@@ -34,6 +35,8 @@ class TestCaseActivity : AppCompatActivity() {
     private fun runCase() {
         testEmptyAnimate()
         testRepeatCount()
+        testDelayAnimate()
+        testNextSubAnimateScope()
     }
 
     /**
@@ -47,11 +50,43 @@ class TestCaseActivity : AppCompatActivity() {
      * 测试重复次数
      */
     fun testRepeatCount() {
-        animateScope {
+        val animScope = animateScope(false) {
             repeatCount = 3
-            onEnd {
-                Log.d(TAG, "testRepeatCount: currentCount:${it.getCurrentRepeatCount()}, ${AnimatorCompat.repeatCount(it.animator)} ")
-                assert(AnimatorCompat.repeatCount(it.animator) == it.getCurrentRepeatCount())
+            animateArgb(0xFFE6E6E6.toInt(), 0xFF1DE261.toInt(), 0xFFE6E6E6.toInt()) {
+                duration = 1000
+
+            }
+            animateFloat(0.5f, 1.5f, 0.5f) {
+                duration = 1000
+
+            }
+            animateArgb(Color.WHITE, 0xFFF8FEFA.toInt(), Color.WHITE) {
+                duration = 1000
+            }
+            onRepeat { animateNode, count, totalCount ->
+                Log.d(TAG, "testRepeatCount: count:$count, totalCount:$totalCount")
+            }
+            onUpdate { animateNode, value, playTime ->
+                Log.d(TAG, "testRepeatCount: playTime:$playTime")
+            }
+        }
+        animScope.start(600)
+    }
+
+    fun testDelayAnimate() = with(binding) {
+        animateScope {
+            delay(200) next animateAlpha(tv2, 0.6f, 1f) { duration = 300 }
+        }
+    }
+
+    fun testNextSubAnimateScope() = with(binding) {
+        animateScope {
+            animateScaleY(tv1, 0.6f, 1f) {
+                duration = 2000
+            } next subAnimateScope {
+                animateScaleX(tv1, 0.5f, 1f){
+                    duration = 2000
+                }
             }
         }
     }

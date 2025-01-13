@@ -1,8 +1,6 @@
 package chenchen.engine.animate
 
 import android.animation.Animator
-import chenchen.engine.animate.AnimateScope
-import chenchen.engine.animate.createDelay
 import java.util.WeakHashMap
 
 /**
@@ -101,11 +99,37 @@ infix fun Animate.with(withAnim: Animate): Animate {
 
 /**
  * 延迟，`delay`之后需要用`next`，否则无效，delay的原理就是`next`了一个空的动画
+ *
  * 注意，`delay`之后不要用`with`，用`with`表示和delay一起执行
+ *
+ * 使用场景：A动画之后延迟B动画
+ * ```kotlin
+ *  animateScope {
+ *      animateAlpha(view, 1f) delay(1000) next animateScaleX(view, 1.2f)
+ *  }
+ * ```
  */
 infix fun Animate.delay(delay: Long): Animate {
     assert(this.parent is AnimateScope)
     val anim = (this.parent as AnimateScope).createDelay(delay)
     anim.duration = delay
     return next(anim)
+}
+
+/**
+ * 延迟，`delay`之后需要用`next`，否则无效，delay的原理就是`next`了一个空的动画
+ *
+ * 注意，`delay`之后不要用`with`，用`with`表示和delay一起执行
+ *
+ * 使用场景：延迟开始第一个动画
+ * ```kotlin
+ *  animateScope {
+ *      delay(1000) next animateScaleX(view, 1.2f)
+ *  }
+ * ```
+ */
+infix fun AnimateScope.delay(delay: Long): Animate {
+    val anim = createDelay(delay)
+    anim.duration = delay
+    return anim
 }

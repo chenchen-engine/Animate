@@ -837,9 +837,9 @@ class AnimateContainer : ValueAnimator() {
                     //只有根动画需要添加状态监听
                     animator.removeListener(animatorListener)
                     animator.superAddListener(animatorListener)
+                    animator.removeUpdateListener(animatorUpdateListener)
+                    animator.superAddUpdateListener(animatorUpdateListener)
                 }
-                animator.removeUpdateListener(animatorUpdateListener)
-                animator.superAddUpdateListener(animatorUpdateListener)
                 //重置时长，否则递归获取时长时会错乱
                 animator.superSetDuration(0)
                 val longestDuration = rememberLongestDuration()
@@ -856,10 +856,10 @@ class AnimateContainer : ValueAnimator() {
          * 初始化每个节点的前置时长
          */
         private fun initFrontDuration() {
+            rememberFrontDuration()
             for (childNode in getChildNodes()) {
                 childNode.initFrontDuration()
             }
-            rememberFrontDuration()
         }
 
         /**
